@@ -17,7 +17,10 @@ from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # Some constants 
-INPUT_FOLDER = '/home/yonic/repos/bowl2017/data/sample_images/'
+#INPUT_FOLDER = '/home/yonic/repos/bowl2017/data/sample_images/'
+INPUT_FOLDER = os.environ['BOWL2017_SAMPLE_FOLDER']
+print("sample images folder: {}".format(INPUT_FOLDER))
+
 
 
 def get_patients():
@@ -91,17 +94,7 @@ def load_patient_hu_image():
     hu_image = get_pixels_hu(slices)
     return hu_image,slices
 
-def test_resamle():
-    hu_image,slices = load_patient_hu_image()
-    hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
-    return hu_image_resampled,new_spacing,old_spacing
-
-def test_plot():
-    hu_image,slices = load_patient_hu_image()
-    plot_3d_image(hu_image)
-
-def plot_3d_image(image, threshold=-300):
-    
+def plot_3d_image(image, threshold=-300):    
     # Position the scan upright, 
     # so the head of the patient would be at the top facing the camera
     p = image.transpose(2,1,0)   
@@ -123,10 +116,25 @@ def plot_3d_image(image, threshold=-300):
 
     plt.show()
     
-def plot_image_slice(hu):
-    plt.hist(hu.flatten(), bins=80, color='c')
-    plt.imshow(hu[80], cmap=plt.cm.gray)
+def plot_image_slice(hu,slice_index=80):
+    #plt.hist(hu.flatten(), bins=80, color='c')
+    plt.imshow(hu[slice_index], cmap=plt.cm.gray)
     plt.show()
+    
+def test_resamle():
+    hu_image,slices = load_patient_hu_image()
+    hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
+    return hu_image_resampled,new_spacing,old_spacing
+
+def test_2d_plot():
+    hu_image,slices = load_patient_hu_image()
+    hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
+    plot_image_slice(hu_image_resampled)    
+
+def test_3d_plot():
+    hu_image,slices = load_patient_hu_image()
+    hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
+    plot_3d_image(hu_image_resampled)
     
     
 
