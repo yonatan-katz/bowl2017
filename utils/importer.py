@@ -5,6 +5,7 @@ Spyder Editor
 This is a temporary script file.
 """
 
+#Based on: https://www.kaggle.com/gzuidhof/full-preprocessing-tutorial
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
@@ -17,7 +18,6 @@ from skimage import measure, morphology
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # Some constants 
-#INPUT_FOLDER = '/home/yonic/repos/bowl2017/data/sample_images/'
 INPUT_FOLDER = os.environ['BOWL2017_SAMPLE_FOLDER']
 print("sample images folder: {}".format(INPUT_FOLDER))
 
@@ -121,6 +121,60 @@ def plot_image_slice(image,slice_index=80):
     plt.imshow(image[slice_index], cmap=plt.cm.gray)
     plt.show()
     
+    
+def largest_label_volume(im, bg=-1):
+    vals, counts = np.unique(im, return_counts=True)
+
+    counts = counts[vals != bg]
+    vals = vals[vals != bg]
+
+    if len(counts) > 0:
+        return vals[np.argmax(counts)]
+    else:
+        return None
+    
+def segment_lung_mask(image, fill_lung_structures=True):
+    
+    # not actually binary, but 1 and 2. 
+    # 0 is treated as background, which we do not want
+    binary_image = np.array(image > -320, dtype=np.int8)+1
+    labels = measure.label(binary_image)
+    
+    # Pick the pixel in the very corner to determine which label is air.
+    #   Improvement: Pick multiple background labels from around the patient
+    #   More resistant to "trays" on which the patient lays cutting the air 
+    #   around the person in half
+    background_label = labels[0,0,0]
+    
+    #Fill the air around the person
+    binary_image[background_label == labels] = 2
+    
+    
+    # Method of filling the lung structures (that is superior to something like 
+    # morphological closing)
+    if fill_lung_structures:
+        # For every slice we determine the largest solid structure
+        for i, axial_slice in enumerate(binary_image):
+            axial_slice = axial_slice - 1
+            labeling = measure.label(axial_slice)
+            l_max = largest_label_volume(labeling, bg=0)
+            
+            if l_max is not None: #This slice contains some lung
+                binary_image[i][labeling != l_max] = 1
+
+    
+    binary_image -= 1 #Make the image actual binary
+    binary_image = 1-binary_image # Invert it, lungs are now 1
+    
+    # Remove other air pockets insided body
+    labels = measure.label(binary_image, background=0)
+    l_max = largest_label_volume(labels, bg=0)
+    if l_max is not None: # There are air pockets
+        binary_image[labels != l_max] = 0
+ 
+    return binary_image    
+    
+    
 def test_resamle():
     hu_image,slices = load_patient_hu_image()
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
@@ -135,6 +189,16 @@ def test_3d_plot(threshold=400):
     hu_image,slices = load_patient_hu_image()
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
     plot_3d_image(image=hu_image_resampled,threshold=threshold)
+    
+def test_3d_segmen_plot(fill_lung_structures=True):
+    hu_image,slices = load_patient_hu_image()
+    hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
+    segmented_lungs_image = segment_lung_mask(hu_image_resampled, fill_lung_structures)
+    plot_3d_image(image=segmented_lungs_image,threshold=0)
+    
+
+    
+
     
     
 
