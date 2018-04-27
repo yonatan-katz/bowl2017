@@ -116,9 +116,9 @@ def plot_3d_image(image, threshold=-300):
 
     plt.show()
     
-def plot_image_slice(hu,slice_index=80):
+def plot_image_slice(image,slice_index=80):
     #plt.hist(hu.flatten(), bins=80, color='c')
-    plt.imshow(hu[slice_index], cmap=plt.cm.gray)
+    plt.imshow(image[slice_index], cmap=plt.cm.gray)
     plt.show()
     
 def test_resamle():
@@ -126,15 +126,15 @@ def test_resamle():
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
     return hu_image_resampled,new_spacing,old_spacing
 
-def test_2d_plot():
+def test_2d_plot(slice_index=80):
     hu_image,slices = load_patient_hu_image()
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
-    plot_image_slice(hu_image_resampled)    
+    plot_image_slice(image=hu_image_resampled,slice_index=slice_index)    
 
-def test_3d_plot():
+def test_3d_plot(threshold=400):
     hu_image,slices = load_patient_hu_image()
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
-    plot_3d_image(hu_image_resampled)
+    plot_3d_image(image=hu_image_resampled,threshold=threshold)
     
     
 
