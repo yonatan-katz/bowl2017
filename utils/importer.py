@@ -21,7 +21,19 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 INPUT_FOLDER = os.environ['BOWL2017_SAMPLE_FOLDER']
 print("sample images folder: {}".format(INPUT_FOLDER))
 
+MIN_BOUND = -1000.0
+MAX_BOUND = 400.0
+PIXEL_MEAN = 0.25
+    
+def normalize(image):
+    image = (image - MIN_BOUND) / (MAX_BOUND - MIN_BOUND)
+    image[image>1] = 1.
+    image[image<0] = 0.
+    return image
 
+def zero_center(image):
+    image = image - PIXEL_MEAN
+    return image
 
 def get_patients():
     patients = os.listdir(INPUT_FOLDER)
@@ -88,9 +100,9 @@ def resample(image, scan, new_spacing=[1,1,1]):
     
     return image, new_spacing, old_spacing
 
-def load_patient_hu_image():
+def load_patient_hu_image(patient_index=0):
     p = get_patients()
-    slices = load_scan(p[0])
+    slices = load_scan(p[patient_index])
     hu_image = get_pixels_hu(slices)
     return hu_image,slices
 
@@ -174,6 +186,13 @@ def segment_lung_mask(image, fill_lung_structures=True):
  
     return binary_image    
     
+def prepare_image_for_processing(patient_index):
+    hu_image,slices = load_patient_hu_image(patient_index=patient_index)
+    hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
+    segmented_lungs_image = segment_lung_mask(hu_image_resampled, fill_lung_structures=True)
+    normalized = normalize(segmented_lungs_image)
+    image_ready_for_process = zero_center(normalized)    
+    return image_ready_for_process
     
 def test_resamle():
     hu_image,slices = load_patient_hu_image()
@@ -194,7 +213,18 @@ def test_3d_segmen_plot(fill_lung_structures=True):
     hu_image,slices = load_patient_hu_image()
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
     segmented_lungs_image = segment_lung_mask(hu_image_resampled, fill_lung_structures)
-    plot_3d_image(image=segmented_lungs_image,threshold=0)
+    plot_3d_image(image=segmented_lungs_image,threshold=0)    
+    
+def test_3d_segmen_final_plot(fill_lung_structures=True):
+    image = prepare_image_for_processing(patient_index=0)
+    plot_3d_image(image=image,threshold=0)   
+
+
+    
+    
+    
+    
+    
     
 
     
