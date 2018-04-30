@@ -136,10 +136,8 @@ def plot_image_slice(image,slice_index=80):
     
 def largest_label_volume(im, bg=-1):
     vals, counts = np.unique(im, return_counts=True)
-
     counts = counts[vals != bg]
     vals = vals[vals != bg]
-
     if len(counts) > 0:
         return vals[np.argmax(counts)]
     else:
@@ -186,12 +184,17 @@ def segment_lung_mask(image, fill_lung_structures=True):
  
     return binary_image    
     
-def prepare_image_for_processing(patient_index):
+def prepare_image_for_processing(patient_index,is_normalize=False):
     hu_image,slices = load_patient_hu_image(patient_index=patient_index)
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
     segmented_lungs_image = segment_lung_mask(hu_image_resampled, fill_lung_structures=True)
-    normalized = normalize(segmented_lungs_image)
-    image_ready_for_process = zero_center(normalized)    
+    
+    if is_normalize:
+        normalized = normalize(segmented_lungs_image)
+        image_ready_for_process = zero_center(normalized)         
+    else:
+        image_ready_for_process = segmented_lungs_image
+    
     return image_ready_for_process
     
 def test_resamle():
@@ -212,7 +215,7 @@ def test_3d_plot(threshold=400):
 def test_3d_segmen_plot(fill_lung_structures=True):
     hu_image,slices = load_patient_hu_image()
     hu_image_resampled,new_spacing,old_spacing = resample(hu_image,slices)
-    segmented_lungs_image = segment_lung_mask(hu_image_resampled, fill_lung_structures)
+    segmented_lungs_image = segment_lung_mask(hu_image_resampled, fill_lung_structures)    
     plot_3d_image(image=segmented_lungs_image,threshold=0)    
     
 def test_3d_segmen_final_plot(fill_lung_structures=True):
